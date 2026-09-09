@@ -1,0 +1,17 @@
+# Firebase
+.firebase/
+firebase-debug.log*
+firebase-debug.*.log*
+ui-debug.log*
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
