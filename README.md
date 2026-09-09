@@ -69,6 +69,9 @@ repo (Settings → Secrets and variables → Actions):
 | `FIREBASE_SERVICE_ACCOUNT` | Secret | The full JSON of a service-account key with the *Firebase Hosting Admin* role |
 | `FIREBASE_PROJECT_ID` | Variable | Your Firebase project id |
 
+Until both are set, CI still runs and validates the site, but the deploy step is
+skipped with a notice rather than failing the build.
+
 The easiest way to generate the secret is to let the CLI do it — run this in the repo
 and it creates the service account and pushes the secret to GitHub for you:
 

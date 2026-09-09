@@ -19,6 +19,9 @@ jobs:
   deploy:
     name: Build and deploy
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -26,12 +29,23 @@ jobs:
       - name: Verify site files exist
         run: |
           test -f public/index.html || { echo "::error::public/index.html is missing"; exit 1; }
-          test -f firebase.json    || { echo "::error::firebase.json is missing"; exit 1; }
+          test -f public/404.html   || { echo "::error::public/404.html is missing"; exit 1; }
+          test -f firebase.json     || { echo "::error::firebase.json is missing"; exit 1; }
           node -e "JSON.parse(require('fs').readFileSync('firebase.json','utf8'))"
           echo "Site payload: $(du -sh public | cut -f1)"
 
+      - name: Check deploy credentials
+        id: creds
+        run: |
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ] && [ -n "$FIREBASE_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::Firebase credentials are not configured, so the site was validated but not deployed. Set the FIREBASE_SERVICE_ACCOUNT secret and the FIREBASE_PROJECT_ID variable (Settings -> Secrets and variables -> Actions) to enable deploys. Running 'firebase init hosting:github' sets both up for you."
+          fi
+
       - name: Deploy preview channel
-        if: github.event_name == 'pull_request'
+        if: steps.creds.outputs.configured == 'true' && github.event_name == 'pull_request'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +54,7 @@ jobs:
           expires: 7d
 
       - name: Deploy to live channel
-        if: github.event_name != 'pull_request'
+        if: steps.creds.outputs.configured == 'true' && github.event_name != 'pull_request'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
